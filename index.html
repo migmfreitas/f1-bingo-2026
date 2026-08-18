@@ -309,13 +309,29 @@
 <div id="login-screen" style="display:none;">
   <div class="login-logo">F1 Bingo 2025</div>
   <div class="login-title">Choose your <span>driver</span></div>
-  <div class="login-cards" id="login-cards"></div>
-  <div class="pin-prompt" id="pin-prompt">
-    <div class="pin-label" id="pin-label">Enter PIN for <strong></strong></div>
-    <input class="pin-input" id="pin-input" type="password" maxlength="8" inputmode="numeric" placeholder="••••">
-    <button class="pin-btn" onclick="submitPin()">Enter →</button>
-    <div class="pin-error" id="pin-error">Incorrect PIN. Try again.</div>
+
+  <!-- No-token warning — shown instead of cards if token is missing -->
+  <div id="no-token-warning" style="display:none;flex-direction:column;align-items:center;gap:1rem;max-width:360px;text-align:center;">
+    <div style="font-size:2rem;">⚠️</div>
+    <div style="font-size:1rem;font-weight:700;color:var(--partial);">Setup not complete</div>
+    <div style="font-size:14px;color:var(--muted);line-height:1.6;">
+      You don't have a save token yet. Without it, any progress you mark <strong style="color:var(--text);">will be lost</strong> when you close the app.<br><br>
+      Ask Miguel for the shared token and paste it in setup — it only takes a minute.
+    </div>
+    <button class="pin-btn" style="width:100%;max-width:260px;" onclick="showSetup()">Go to setup →</button>
   </div>
+
+  <!-- Normal login cards — only shown when token exists -->
+  <div id="login-cards-wrap" style="display:none;flex-direction:column;align-items:center;gap:1.5rem;">
+    <div class="login-cards" id="login-cards"></div>
+    <div class="pin-prompt" id="pin-prompt">
+      <div class="pin-label" id="pin-label">Enter PIN for <strong></strong></div>
+      <input class="pin-input" id="pin-input" type="password" maxlength="8" inputmode="numeric" placeholder="••••">
+      <button class="pin-btn" onclick="submitPin()">Enter →</button>
+      <div class="pin-error" id="pin-error">Incorrect PIN. Try again.</div>
+    </div>
+  </div>
+
   <div style="margin-top:1rem;">
     <button onclick="showSetup()" style="background:transparent;border:none;color:var(--muted);font-size:12px;cursor:pointer;text-decoration:underline;">First time here? Setup</button>
   </div>
@@ -549,12 +565,19 @@ function showLoginScreen() {
   document.getElementById('setup-screen').style.display = 'none';
   document.getElementById('login-screen').style.display = 'flex';
   document.getElementById('app-screen').style.display = 'none';
-  const cards = document.getElementById('login-cards');
-  cards.innerHTML = PLAYER_NAMES.map(p => `
-    <div class="login-card" onclick="selectPlayer('${p}')">
-      <div class="login-card-name">${p}</div>
-      <div class="login-card-hint">Enter PIN to continue</div>
-    </div>`).join('');
+
+  const hasToken = !!localStorage.getItem('f1bingo_token');
+  document.getElementById('no-token-warning').style.display = hasToken ? 'none' : 'flex';
+  document.getElementById('login-cards-wrap').style.display = hasToken ? 'flex' : 'none';
+
+  if (hasToken) {
+    const cards = document.getElementById('login-cards');
+    cards.innerHTML = PLAYER_NAMES.map(p => `
+      <div class="login-card" onclick="selectPlayer('${p}')">
+        <div class="login-card-name">${p}</div>
+        <div class="login-card-hint">Enter PIN to continue</div>
+      </div>`).join('');
+  }
 }
 
 let pendingPlayer = null;
