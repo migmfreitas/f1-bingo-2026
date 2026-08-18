@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>F1 Bingo 2025</title>
+<style>
+  :root {
+    --bg: #0f0f0f;
+    --bg2: #161616;
+    --card: #1c1c1c;
+    --border: #2a2a2a;
+    --border2: #3a3a3a;
+    --red: #e10600;
+    --red2: #ff1801;
+    --text: #e8e8e8;
+    --muted: #888;
+    --done: #1db954;
+    --done-bg: #0d2818;
+    --done-border: #1a4a2a;
+    --partial: #f59e0b;
+    --partial-bg: #2a1f00;
+    --partial-border: #4a3500;
+    --radius: 6px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; min-height: 100vh; }
+
+  /* LOGIN */
+  #login-screen {
+    min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    flex-direction: column; gap: 2rem; padding: 2rem;
+  }
+  .login-logo { font-size: 13px; letter-spacing: 0.2em; color: var(--red); font-weight: 700; text-transform: uppercase; }
+  .login-title { font-size: 2.5rem; font-weight: 800; letter-spacing: -0.03em; }
+  .login-title span { color: var(--red); }
+  .login-cards { display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center; }
+  .login-card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+    padding: 1.5rem 2rem; cursor: pointer; transition: border-color .2s, transform .1s;
+    text-align: center; min-width: 160px;
+  }
+  .login-card:hover { border-color: var(--red); transform: translateY(-2px); }
+  .login-card-name { font-size: 1.1rem; font-weight: 700; margin-bottom: 0.25rem; }
+  .login-card-hint { font-size: 12px; color: var(--muted); }
+  .pin-prompt {
+    background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+    padding: 2rem; text-align: center; display: none; flex-direction: column; gap: 1rem; max-width: 300px;
+  }
+  .pin-prompt.visible { display: flex; }
+  .pin-label { font-size: 14px; color: var(--muted); }
+  .pin-input {
+    background: var(--bg2); border: 1px solid var(--border2); border-radius: var(--radius);
+    color: var(--text); font-size: 1.5rem; text-align: center; padding: 0.75rem;
+    letter-spacing: 0.3em; width: 100%; outline: none;
+  }
+  .pin-input:focus { border-color: var(--red); }
+  .pin-btn {
+    background: var(--red); color: #fff; border: none; border-radius: var(--radius);
+    padding: 0.75rem; font-size: 15px; font-weight: 700; cursor: pointer; transition: background .15s;
+  }
+  .pin-btn:hover { background: var(--red2); }
+  .pin-error { font-size: 13px; color: var(--red); display: none; }
+  .pin-error.visible { display: block; }
+
+  /* GIST SETUP */
+  #setup-screen {
+    min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    flex-direction: column; gap: 1.5rem; padding: 2rem; max-width: 540px; margin: 0 auto;
+  }
+  .setup-title { font-size: 1.4rem; font-weight: 700; }
+  .setup-desc { font-size: 14px; color: var(--muted); line-height: 1.6; text-align: center; }
+  .setup-input {
+    background: var(--bg2); border: 1px solid var(--border2); border-radius: var(--radius);
+    color: var(--text); font-size: 14px; padding: 0.75rem 1rem; width: 100%; outline: none; font-family: monospace;
+  }
+  .setup-input:focus { border-color: var(--red); }
+  .setup-label { font-size: 13px; color: var(--muted); align-self: flex-start; }
+  .setup-btn {
+    background: var(--red); color: #fff; border: none; border-radius: var(--radius);
+    padding: 0.75rem 2rem; font-size: 15px; font-weight: 700; cursor: pointer; width: 100%;
+  }
+  .setup-step {
+    background: var(--card); border: 1px solid var(--border); border-radius: 8px;
+    padding: 1rem 1.25rem; width: 100%;
+  }
+  .setup-step-num { font-size: 11px; color: var(--red); font-weight: 700; letter-spacing: 0.1em; margin-bottom: 4px; }
+  .setup-step-text { font-size: 13px; line-height: 1.5; }
+  .setup-step-text a { color: var(--partial); }
+  .setup-step code { background: var(--bg2); padding: 1px 5px; border-radius: 3px; font-size: 12px; color: var(--done); }
+
+  /* APP */
+  #app-screen { display: none; min-height: 100vh; }
+  header {
+    border-bottom: 1px solid var(--border); padding: 0 1.5rem;
+    display: flex; align-items: center; justify-content: space-between; height: 56px;
+    position: sticky; top: 0; background: rgba(15,15,15,0.95); backdrop-filter: blur(8px); z-index: 100;
+  }
+  .header-brand { font-size: 13px; font-weight: 800; letter-spacing: 0.15em; color: var(--red); }
+  .header-right { display: flex; align-items: center; gap: 1rem; }
+  .header-user { font-size: 13px; color: var(--muted); }
+  .header-user span { color: var(--text); font-weight: 600; }
+  .logout-btn {
+    background: transparent; border: 1px solid var(--border2); border-radius: var(--radius);
+    color: var(--muted); font-size: 12px; padding: 4px 12px; cursor: pointer;
+  }
+  .logout-btn:hover { border-color: var(--red); color: var(--red); }
+  .sync-status { font-size: 11px; color: var(--muted); }
+  .sync-status.saving { color: var(--partial); }
+  .sync-status.saved { color: var(--done); }
+  .sync-status.error { color: var(--red); }
+
+  .main { padding: 1.5rem; max-width: 1400px; margin: 0 auto; }
+
+  /* PLAYER TABS */
+  .player-tabs { display: flex; gap: 8px; margin-bottom: 1.5rem; flex-wrap: wrap; }
+  .player-tab {
+    padding: 8px 20px; border-radius: var(--radius); border: 1px solid var(--border2);
+    background: transparent; color: var(--muted); font-size: 14px; font-weight: 600; cursor: pointer; transition: all .15s;
+  }
+  .player-tab:hover { border-color: var(--red); color: var(--text); }
+  .player-tab.active { background: var(--red); border-color: var(--red); color: #fff; }
+  .player-tab .tab-score { font-size: 11px; font-weight: 400; opacity: 0.8; margin-left: 6px; }
+
+  /* BINGO CARD */
+  .card-wrap { display: none; }
+  .card-wrap.active { display: block; }
+
+  .card-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 1rem; flex-wrap: wrap; gap: 0.75rem;
+  }
+  .card-player-name { font-size: 1.3rem; font-weight: 800; }
+  .card-player-mine { color: var(--red); }
+  .card-stats { display: flex; gap: 1rem; align-items: center; }
+  .card-stat { text-align: center; }
+  .card-stat-val { font-size: 1.4rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+  .card-stat-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+  .bingo-badge {
+    background: var(--done-bg); border: 1px solid var(--done-border);
+    color: var(--done); font-size: 12px; font-weight: 700; padding: 4px 12px;
+    border-radius: 99px; letter-spacing: 0.05em;
+  }
+
+  /* PROGRESS */
+  .progress-wrap { margin-bottom: 1.25rem; }
+  .progress-track { height: 4px; background: var(--border); border-radius: 99px; overflow: hidden; }
+  .progress-fill { height: 100%; background: var(--red); border-radius: 99px; transition: width .4s; }
+
+  /* 5×5 GRID */
+  .bingo-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 6px;
+    margin-bottom: 1.5rem;
+  }
+  .bingo-cell {
+    background: var(--card); border: 1px solid var(--border); border-radius: 8px;
+    padding: 8px; min-height: 90px; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 6px; text-align: center;
+    transition: border-color .15s;
+    position: relative;
+  }
+  .bingo-cell.editable { cursor: pointer; }
+  .bingo-cell.editable:hover { border-color: var(--border2); }
+  .bingo-cell.done { background: var(--done-bg); border-color: var(--done-border); }
+  .bingo-cell.partial { background: var(--partial-bg); border-color: var(--partial-border); }
+  .bingo-cell.free { background: #1a1000; border-color: #3a2800; }
+  .bingo-cell.line-done { border-color: var(--done) !important; box-shadow: 0 0 0 1px var(--done); }
+  .cell-text { font-size: 10px; line-height: 1.35; color: var(--text); font-weight: 500; }
+  .bingo-cell.done .cell-text { color: #6ee7a0; }
+  .bingo-cell.partial .cell-text { color: #fcd34d; }
+  .bingo-cell.free .cell-text { color: #f59e0b; font-weight: 700; font-size: 11px; }
+  .cell-check { font-size: 16px; line-height: 1; }
+  .cell-counter {
+    display: flex; align-items: center; gap: 4px;
+  }
+  .cell-counter-val {
+    font-size: 13px; font-weight: 800; font-variant-numeric: tabular-nums;
+    min-width: 36px; text-align: center; letter-spacing: -0.02em;
+  }
+  .cell-counter-val.done { color: var(--done); }
+  .cell-counter-val.partial { color: var(--partial); }
+  .counter-btn {
+    width: 20px; height: 20px; border-radius: 4px; border: 1px solid var(--border2);
+    background: var(--bg2); color: var(--text); font-size: 13px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    line-height: 1; padding: 0;
+  }
+  .counter-btn:hover { background: var(--border2); }
+  .counter-btn:active { transform: scale(0.9); }
+
+  /* LINE INDICATORS */
+  .line-indicators { display: flex; gap: 6px; margin-bottom: 1rem; flex-wrap: wrap; }
+  .line-pill {
+    font-size: 10px; font-weight: 700; padding: 3px 10px; border-radius: 99px;
+    border: 1px solid var(--border2); color: var(--muted); letter-spacing: 0.04em;
+    transition: all .2s;
+  }
+  .line-pill.done { background: var(--done-bg); border-color: var(--done-border); color: var(--done); }
+
+  /* COMPARE BAR */
+  .compare-section {
+    border-top: 1px solid var(--border); padding-top: 1.25rem; margin-top: 0.5rem;
+  }
+  .compare-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.75rem; font-weight: 700; }
+  .compare-rows { display: flex; flex-direction: column; gap: 8px; }
+  .compare-row { display: flex; align-items: center; gap: 10px; }
+  .compare-name { font-size: 13px; font-weight: 600; width: 80px; flex-shrink: 0; }
+  .compare-bar-track { flex: 1; height: 6px; background: var(--border); border-radius: 99px; overflow: hidden; }
+  .compare-bar-fill { height: 100%; border-radius: 99px; background: var(--red); transition: width .4s; }
+  .compare-pct { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; width: 50px; text-align: right; }
+  .compare-bingo { font-size: 11px; color: var(--done); margin-left: 4px; }
+
+  /* READONLY OVERLAY */
+  .readonly-notice {
+    font-size: 11px; color: var(--muted); text-align: center;
+    padding: 6px; background: var(--bg2); border-radius: var(--radius);
+    border: 1px solid var(--border); margin-bottom: 1rem;
+  }
+
+  /* LOADING */
+  .loading { text-align: center; padding: 3rem; color: var(--muted); font-size: 14px; }
+
+  /* RESPONSIVE */
+  @media (max-width: 640px) {
+    .bingo-grid { grid-template-columns: repeat(5, 1fr); gap: 4px; }
+    .bingo-cell { min-height: 68px; padding: 5px; }
+    .cell-text { font-size: 8.5px; }
+    .counter-btn { width: 16px; height: 16px; font-size: 11px; }
+    .cell-counter-val { font-size: 11px; min-width: 28px; }
+    header { padding: 0 1rem; }
+    .main { padding: 1rem; }
+  }
+</style>
+</head>
+<body>
+
+<!-- SETUP SCREEN -->
+<div id="setup-screen" style="display:none;">
+  <div style="font-size:13px;letter-spacing:0.2em;color:var(--red);font-weight:800;">F1 BINGO 2025</div>
+  <div class="setup-title">One-time setup</div>
+  <div class="setup-desc">This app stores data in a GitHub Gist so your progress is saved forever and shared between all players. Follow the steps below.</div>
+
+  <div class="setup-step">
+    <div class="setup-step-num">STEP 1 — CREATE A GIST</div>
+    <div class="setup-step-text">
+      Go to <a href="https://gist.github.com" target="_blank">gist.github.com</a>, create a new <strong>public</strong> gist with filename <code>f1bingo2025.json</code> and content <code>{}</code>. Copy the Gist ID from the URL (the long string at the end).
+    </div>
+  </div>
+
+  <div class="setup-step">
+    <div class="setup-step-num">STEP 2 — CREATE A TOKEN</div>
+    <div class="setup-step-text">
+      Go to <a href="https://github.com/settings/tokens/new" target="_blank">GitHub → Settings → Developer settings → Personal access tokens → Tokens (classic)</a>. Create a token with the <code>gist</code> scope only. Copy it — you'll only see it once.
+    </div>
+  </div>
+
+  <div class="setup-step">
+    <div class="setup-step-num">STEP 3 — ENTER DETAILS BELOW</div>
+    <div class="setup-step-text">These are saved in your browser only (localStorage). Share the Gist ID with your friends so they can enter it on their devices — they don't need a token (read-only is public).</div>
+  </div>
+
+  <div style="width:100%;display:flex;flex-direction:column;gap:8px;">
+    <div class="setup-label">Gist ID</div>
+    <input class="setup-input" id="setup-gist-id" placeholder="e.g. a1b2c3d4e5f6...">
+    <div class="setup-label" style="margin-top:4px;">GitHub Personal Access Token <span style="color:var(--muted);font-size:11px;">(optional — needed to save your own card)</span></div>
+    <input class="setup-input" id="setup-token" type="password" placeholder="ghp_...">
+    <div class="setup-label" style="margin-top:4px;">Your name <span style="color:var(--muted);font-size:11px;">(Francisco / João / Miguel)</span></div>
+    <input class="setup-input" id="setup-name" placeholder="e.g. Francisco">
+    <button class="setup-btn" style="margin-top:8px;" onclick="saveSetup()">Save & continue →</button>
+    <div id="setup-error" class="pin-error"></div>
+  </div>
+</div>
+
+<!-- LOGIN SCREEN -->
+<div id="login-screen" style="display:none;">
+  <div class="login-logo">F1 Bingo 2025</div>
+  <div class="login-title">Choose your <span>driver</span></div>
+  <div class="login-cards" id="login-cards"></div>
+  <div class="pin-prompt" id="pin-prompt">
+    <div class="pin-label" id="pin-label">Enter PIN for <strong></strong></div>
+    <input class="pin-input" id="pin-input" type="password" maxlength="8" inputmode="numeric" placeholder="••••">
+    <button class="pin-btn" onclick="submitPin()">Enter →</button>
+    <div class="pin-error" id="pin-error">Incorrect PIN. Try again.</div>
+  </div>
+  <div style="margin-top:1rem;">
+    <button onclick="showSetup()" style="background:transparent;border:none;color:var(--muted);font-size:12px;cursor:pointer;text-decoration:underline;">Setup / change Gist ID</button>
+  </div>
+</div>
+
+<!-- APP SCREEN -->
+<div id="app-screen">
+  <header>
+    <div class="header-brand">F1 BINGO 2025</div>
+    <div class="header-right">
+      <div class="sync-status" id="sync-status"></div>
+      <div class="header-user">Signed in as <span id="header-name"></span></div>
+      <button class="logout-btn" onclick="logout()">Sign out</button>
+    </div>
+  </header>
+  <div class="main">
+    <div id="app-loading" class="loading">Loading from Gist…</div>
+    <div id="app-content" style="display:none;">
+      <div class="player-tabs" id="player-tabs"></div>
+      <div id="player-cards"></div>
+      <div class="compare-section">
+        <div class="compare-label">Season standings</div>
+        <div class="compare-rows" id="compare-rows"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── DATA ────────────────────────────────────────────────────────────────────
+
+const PLAYERS = {
+  Francisco: {
+    pin: '6969',
+    squares: [
+      // Row 1
+      { label: 'Aston Martin scores points', type: 'check' },
+      { label: 'Audi on the podium', type: 'check' },
+      { label: 'Home driver win', type: 'check' },
+      { label: 'Home driver DNF', type: 'check' },
+      { label: 'DOTD from non-top team', type: 'counter', target: 2 },
+      // Row 2
+      { label: 'Win from pole position', type: 'counter', target: 8 },
+      { label: 'Podium 100% British', type: 'check' },
+      { label: 'Mercedes not on podium', type: 'counter', target: 3 },
+      { label: 'Both Williams on points', type: 'check' },
+      { label: 'Drive-through penalty', type: 'check' },
+      // Row 3
+      { label: 'Ocon & Gasly crash each other', type: 'check' },
+      { label: 'Nico Rosberg curse happens', type: 'check' },
+      { label: 'Merc–McL–McL–Merc sandwich', type: 'check' },
+      { label: 'Merc–Fer–Fer–Merc sandwich', type: 'check' },
+      { label: 'New driver on podium', type: 'check' },
+      // Row 4
+      { label: 'Hamilton wins', type: 'check' },
+      { label: 'Piastri wins', type: 'check' },
+      { label: 'All teams score (11 teams)', type: 'counter', target: 11 },
+      { label: 'Split champions (WDC ≠ WCC team)', type: 'check' },
+      { label: 'Alpine changes top executive', type: 'check' },
+      // Row 5
+      { label: 'Christian Horner is back', type: 'check' },
+      { label: 'Mid-season driver swap', type: 'check' },
+      { label: 'Mercedes pole position', type: 'counter', target: 10 },
+      { label: 'Qualifying on a Sunday', type: 'check' },
+      { label: 'New polesitter', type: 'check' },
+    ]
+  },
+  João: {
+    pin: '6767',
+    squares: [
+      // Row 1
+      { label: 'Cadillac scores', type: 'check' },
+      { label: 'Alpine on the podium', type: 'check' },
+      { label: 'Racing Bulls on podium', type: 'check' },
+      { label: 'McLaren one-two', type: 'check' },
+      { label: 'Red Bull one-two', type: 'check' },
+      // Row 2
+      { label: 'Grand slam (pole + win + FL + lead all laps)', type: 'check' },
+      { label: 'Red flag during race', type: 'counter', target: 3 },
+      { label: 'President / VP / Former POTUS at USA race', type: 'check' },
+      { label: 'Accident with 3+ cars', type: 'check' },
+      { label: 'Safety car', type: 'counter', target: 8 },
+      // Row 3
+      { label: 'Virtual safety car', type: 'counter', target: 6 },
+      { label: 'Ocon gets 10s penalty', type: 'check' },
+      { label: 'Drive-through penalty', type: 'counter', target: 2 },
+      { label: 'Front wing changes', type: 'counter', target: 5 },
+      { label: 'Win from outside top 10', type: 'check' },
+      // Row 4
+      { label: 'Teammates crash & DNF', type: 'counter', target: 2 },
+      { label: 'Max on podium in Netherlands', type: 'check' },
+      { label: 'Pérez scores in Mexico', type: 'check' },
+      { label: 'Fer–Merc–Merc–Fer sandwich', type: 'check' },
+      { label: 'Norris wins', type: 'check' },
+      // Row 5
+      { label: 'GP cancelled or replaced', type: 'check' },
+      { label: 'Reserve driver races at GP', type: 'check' },
+      { label: 'Ferrari pole position', type: 'counter', target: 8 },
+      { label: 'McLaren pole position', type: 'counter', target: 6 },
+      { label: 'Sprint won by non-VER/RUS', type: 'check' },
+    ]
+  },
+  Miguel: {
+    pin: '2121',
+    squares: [
+      // Row 1
+      { label: 'Ferrari one-two', type: 'check' },
+      { label: 'Verstappen is DOTD', type: 'counter', target: 2 },
+      { label: 'DOTD is the winner', type: 'counter', target: 3 },
+      { label: 'Sainz sings Smooth Operator', type: 'check' },
+      { label: 'GP shortened or hits time limit', type: 'check' },
+      // Row 2
+      { label: 'DSQ after race', type: 'check' },
+      { label: '100% Commonwealth podium', type: 'check' },
+      { label: 'HAM + BOT + VER in same race (any order)', type: 'check' },
+      { label: 'Crash with 4+ cars', type: 'check' },
+      { label: 'Start from pitlane → podium', type: 'check' },
+      // Row 3
+      { label: 'Teammates crash & DNF', type: 'check' },
+      { label: 'Red Bull & Racing Bull crash & DNF', type: 'check' },
+      { label: 'Lawson & Pérez crash', type: 'check' },
+      { label: 'Rolling race start', type: 'check' },
+      { label: 'Rolling race restart', type: 'check' },
+      // Row 4
+      { label: 'Ferrari on podium in Monza', type: 'check' },
+      { label: 'Leclerc on podium in Monaco', type: 'check' },
+      { label: 'Leclerc wins', type: 'check' },
+      { label: 'All drivers score', type: 'check' },
+      { label: 'Verstappen hits 50 poles', type: 'check' },
+      // Row 5
+      { label: 'FIA race ban (12 penalty points)', type: 'check' },
+      { label: 'Rui Marques leaves race direction', type: 'check' },
+      { label: 'Bottas trims moustache (or new one grown)', type: 'check' },
+      { label: 'Driver retires from F1', type: 'check' },
+      { label: 'Russell wins sprint', type: 'counter', target: 2 },
+    ]
+  }
+};
+
+const PLAYER_NAMES = Object.keys(PLAYERS);
+
+// ─── STATE ───────────────────────────────────────────────────────────────────
+
+let currentPlayer = null;
+let gistData = {}; // { Francisco: [{count},...], ... }
+let gistId = null;
+let githubToken = null;
+let saveTimer = null;
+let activeTab = PLAYER_NAMES[0];
+
+// ─── INIT ────────────────────────────────────────────────────────────────────
+
+function init() {
+  gistId = localStorage.getItem('f1bingo_gist_id');
+  githubToken = localStorage.getItem('f1bingo_token');
+  const savedPlayer = localStorage.getItem('f1bingo_player');
+
+  if (!gistId) { showSetupScreen(); return; }
+  if (savedPlayer && PLAYER_NAMES.includes(savedPlayer)) {
+    currentPlayer = savedPlayer;
+    document.getElementById('header-name').textContent = currentPlayer;
+    showApp();
+  } else {
+    showLoginScreen();
+  }
+}
+
+// ─── SETUP ───────────────────────────────────────────────────────────────────
+
+function showSetup() { showSetupScreen(); }
+function showSetupScreen() {
+  document.getElementById('setup-screen').style.display = 'flex';
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app-screen').style.display = 'none';
+  const existing = localStorage.getItem('f1bingo_gist_id') || '';
+  document.getElementById('setup-gist-id').value = existing;
+}
+
+function saveSetup() {
+  const gid = document.getElementById('setup-gist-id').value.trim();
+  const tok = document.getElementById('setup-token').value.trim();
+  const name = document.getElementById('setup-name').value.trim();
+  const err = document.getElementById('setup-error');
+  if (!gid) { err.textContent = 'Please enter a Gist ID.'; err.classList.add('visible'); return; }
+  err.classList.remove('visible');
+  localStorage.setItem('f1bingo_gist_id', gid);
+  if (tok) localStorage.setItem('f1bingo_token', tok);
+  if (name && PLAYER_NAMES.includes(name)) {
+    localStorage.setItem('f1bingo_player', name);
+    currentPlayer = name;
+    gistId = gid; githubToken = tok || null;
+    document.getElementById('header-name').textContent = currentPlayer;
+    showApp();
+  } else {
+    gistId = gid; githubToken = tok || null;
+    showLoginScreen();
+  }
+}
+
+// ─── LOGIN ───────────────────────────────────────────────────────────────────
+
+function showLoginScreen() {
+  document.getElementById('setup-screen').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('app-screen').style.display = 'none';
+  const cards = document.getElementById('login-cards');
+  cards.innerHTML = PLAYER_NAMES.map(p => `
+    <div class="login-card" onclick="selectPlayer('${p}')">
+      <div class="login-card-name">${p}</div>
+      <div class="login-card-hint">Enter PIN to continue</div>
+    </div>`).join('');
+}
+
+let pendingPlayer = null;
+function selectPlayer(name) {
+  pendingPlayer = name;
+  const prompt = document.getElementById('pin-prompt');
+  document.getElementById('pin-label').innerHTML = `Enter PIN for <strong>${name}</strong>`;
+  document.getElementById('pin-input').value = '';
+  document.getElementById('pin-error').classList.remove('visible');
+  prompt.classList.add('visible');
+  document.getElementById('pin-input').focus();
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && document.getElementById('pin-prompt').classList.contains('visible')) submitPin();
+});
+
+function submitPin() {
+  const val = document.getElementById('pin-input').value.trim();
+  if (val === PLAYERS[pendingPlayer].pin) {
+    currentPlayer = pendingPlayer;
+    localStorage.setItem('f1bingo_player', currentPlayer);
+    document.getElementById('header-name').textContent = currentPlayer;
+    document.getElementById('pin-prompt').classList.remove('visible');
+    // Check if we have token stored
+    githubToken = localStorage.getItem('f1bingo_token');
+    showApp();
+  } else {
+    document.getElementById('pin-error').classList.add('visible');
+    document.getElementById('pin-input').value = '';
+  }
+}
+
+function logout() {
+  localStorage.removeItem('f1bingo_player');
+  currentPlayer = null;
+  showLoginScreen();
+}
+
+// ─── APP ─────────────────────────────────────────────────────────────────────
+
+async function showApp() {
+  document.getElementById('setup-screen').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app-screen').style.display = 'block';
+  document.getElementById('app-loading').style.display = 'block';
+  document.getElementById('app-content').style.display = 'none';
+  await loadGist();
+  renderApp();
+  document.getElementById('app-loading').style.display = 'none';
+  document.getElementById('app-content').style.display = 'block';
+}
+
+// ─── GIST I/O ─────────────────────────────────────────────────────────────────
+
+function defaultState() {
+  const s = {};
+  PLAYER_NAMES.forEach(p => {
+    s[p] = PLAYERS[p].squares.map(sq => ({ count: 0 }));
+  });
+  return s;
+}
+
+async function loadGist() {
+  try {
+    const res = await fetch(`https://api.github.com/gists/${gistId}`, {
+      headers: { 'Accept': 'application/vnd.github+json' }
+    });
+    if (!res.ok) throw new Error('Gist fetch failed');
+    const json = await res.json();
+    const file = json.files['f1bingo2025.json'];
+    if (!file) throw new Error('File not found in Gist');
+    const raw = file.content.trim();
+    gistData = raw === '{}' || !raw ? defaultState() : JSON.parse(raw);
+    // Ensure all players have full arrays
+    PLAYER_NAMES.forEach(p => {
+      if (!gistData[p]) gistData[p] = PLAYERS[p].squares.map(() => ({ count: 0 }));
+      while (gistData[p].length < PLAYERS[p].squares.length) gistData[p].push({ count: 0 });
+    });
+  } catch (e) {
+    console.warn('Gist load error, using defaults:', e);
+    gistData = defaultState();
+    setSyncStatus('error', 'Could not load Gist — check ID');
+  }
+}
+
+async function saveGist() {
+  if (!githubToken) { setSyncStatus('error', 'No token — changes not saved'); return; }
+  setSyncStatus('saving', 'Saving…');
+  try {
+    const res = await fetch(`https://api.github.com/gists/${gistId}`, {
+      method: 'PATCH',
+      headers: {
+        'Accept': 'application/vnd.github+json',
+        'Authorization': `Bearer ${githubToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ files: { 'f1bingo2025.json': { content: JSON.stringify(gistData, null, 2) } } })
+    });
+    if (!res.ok) throw new Error('Save failed');
+    setSyncStatus('saved', 'Saved ✓');
+    setTimeout(() => setSyncStatus('', ''), 2500);
+  } catch (e) {
+    setSyncStatus('error', 'Save failed');
+  }
+}
+
+function scheduleSave() {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(saveGist, 800);
+}
+
+function setSyncStatus(cls, txt) {
+  const el = document.getElementById('sync-status');
+  el.className = 'sync-status ' + cls;
+  el.textContent = txt;
+}
+
+// ─── RENDER ───────────────────────────────────────────────────────────────────
+
+function renderApp() {
+  renderTabs();
+  renderCards();
+  renderCompare();
+}
+
+function renderTabs() {
+  const wrap = document.getElementById('player-tabs');
+  wrap.innerHTML = PLAYER_NAMES.map(p => {
+    const done = completedCount(p);
+    const bingo = hasBingo(p);
+    return `<button class="player-tab ${p === activeTab ? 'active' : ''}" onclick="switchTab('${p}')">
+      ${p}${bingo ? ' 🏆' : ''}
+      <span class="tab-score">${done}/25</span>
+    </button>`;
+  }).join('');
+}
+
+function renderCards() {
+  const wrap = document.getElementById('player-cards');
+  wrap.innerHTML = PLAYER_NAMES.map(p => renderCard(p)).join('');
+}
+
+function renderCard(p) {
+  const squares = PLAYERS[p].squares;
+  const state = gistData[p];
+  const done = completedCount(p);
+  const bingo = hasBingo(p);
+  const pct = Math.round(done / 25 * 100);
+  const isMe = p === currentPlayer;
+  const lineDone = getLineDone(p);
+
+  const cells = squares.map((sq, i) => {
+    const count = state[i].count;
+    const isComplete = sq.type === 'check' ? count >= 1 : count >= sq.target;
+    const isPartial = !isComplete && sq.type === 'counter' && count > 0;
+    const cellClass = isComplete ? 'done' : isPartial ? 'partial' : '';
+    const row = Math.floor(i / 5);
+    const lineClass = lineDone[row] ? 'line-done' : '';
+
+    let inner = '';
+    if (sq.type === 'check') {
+      inner = `
+        <div class="cell-text">${sq.label}</div>
+        ${isComplete ? '<div class="cell-check">✓</div>' : ''}
+      `;
+    } else {
+      const valClass = isComplete ? 'done' : isPartial ? 'partial' : '';
+      inner = `
+        <div class="cell-text">${sq.label}</div>
+        <div class="cell-counter">
+          ${isMe ? `<button class="counter-btn" onclick="event.stopPropagation();adjust('${p}',${i},-1)">−</button>` : ''}
+          <div class="cell-counter-val ${valClass}">${count}/${sq.target}</div>
+          ${isMe ? `<button class="counter-btn" onclick="event.stopPropagation();adjust('${p}',${i},1)">+</button>` : ''}
+        </div>
+      `;
+    }
+
+    const clickable = isMe && sq.type === 'check' ? `onclick="toggle('${p}',${i})"` : '';
+    const editableClass = isMe && sq.type === 'check' ? 'editable' : '';
+
+    return `<div class="bingo-cell ${cellClass} ${lineClass} ${editableClass}" ${clickable}>${inner}</div>`;
+  }).join('');
+
+  const linePills = ['R1','R2','R3','R4','R5'].map((lbl, i) =>
+    `<div class="line-pill ${lineDone[i] ? 'done' : ''}">${lbl}</div>`
+  ).join('');
+
+  const readonlyNotice = !isMe ? `<div class="readonly-notice">👁 Viewing ${p}'s card — read only</div>` : '';
+
+  return `
+    <div class="card-wrap ${p === activeTab ? 'active' : ''}" data-player="${p}">
+      ${readonlyNotice}
+      <div class="card-header">
+        <div class="card-player-name ${isMe ? 'card-player-mine' : ''}">${p}'s card${isMe ? ' (you)' : ''}</div>
+        <div class="card-stats">
+          ${bingo ? '<div class="bingo-badge">🏁 BINGO</div>' : ''}
+          <div class="card-stat"><div class="card-stat-val">${done}</div><div class="card-stat-label">Done</div></div>
+          <div class="card-stat"><div class="card-stat-val">${pct}%</div><div class="card-stat-label">Complete</div></div>
+        </div>
+      </div>
+      <div class="progress-wrap">
+        <div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div>
+      </div>
+      <div class="line-indicators">${linePills}</div>
+      <div class="bingo-grid">${cells}</div>
+    </div>`;
+}
+
+function renderCompare() {
+  const wrap = document.getElementById('compare-rows');
+  wrap.innerHTML = PLAYER_NAMES.map(p => {
+    const done = completedCount(p);
+    const pct = Math.round(done / 25 * 100);
+    const bingo = hasBingo(p);
+    return `<div class="compare-row">
+      <div class="compare-name">${p}</div>
+      <div class="compare-bar-track"><div class="compare-bar-fill" style="width:${pct}%"></div></div>
+      <div class="compare-pct">${done}/25${bingo ? '<span class="compare-bingo"> 🏁</span>' : ''}</div>
+    </div>`;
+  }).join('');
+}
+
+function switchTab(p) {
+  activeTab = p;
+  document.querySelectorAll('.player-tab').forEach(t => t.classList.toggle('active', t.textContent.startsWith(p)));
+  document.querySelectorAll('.card-wrap').forEach(c => c.classList.toggle('active', c.dataset.player === p));
+  renderTabs();
+}
+
+// ─── LOGIC ────────────────────────────────────────────────────────────────────
+
+function completedCount(p) {
+  return gistData[p].filter((s, i) => {
+    const sq = PLAYERS[p].squares[i];
+    return sq.type === 'check' ? s.count >= 1 : s.count >= sq.target;
+  }).length;
+}
+
+function getLineDone(p) {
+  return [0,1,2,3,4].map(row =>
+    [0,1,2,3,4].every(col => {
+      const i = row * 5 + col;
+      const sq = PLAYERS[p].squares[i];
+      return sq.type === 'check' ? gistData[p][i].count >= 1 : gistData[p][i].count >= sq.target;
+    })
+  );
+}
+
+function hasBingo(p) { return getLineDone(p).some(Boolean); }
+
+function toggle(p, i) {
+  if (p !== currentPlayer) return;
+  gistData[p][i].count = gistData[p][i].count >= 1 ? 0 : 1;
+  rerender(p); scheduleSave();
+}
+
+function adjust(p, i, delta) {
+  if (p !== currentPlayer) return;
+  const sq = PLAYERS[p].squares[i];
+  let c = gistData[p][i].count + delta;
+  c = Math.max(0, Math.min(sq.target, c));
+  gistData[p][i].count = c;
+  rerender(p); scheduleSave();
+}
+
+function rerender(p) {
+  const wrap = document.getElementById('player-cards');
+  const existing = wrap.querySelector(`[data-player="${p}"]`);
+  const isActive = existing && existing.classList.contains('active');
+  const newCard = document.createElement('div');
+  newCard.innerHTML = renderCard(p);
+  const newEl = newCard.firstElementChild;
+  if (isActive) newEl.classList.add('active');
+  existing.replaceWith(newEl);
+  renderTabs();
+  renderCompare();
+}
+
+// ─── START ────────────────────────────────────────────────────────────────────
+init();
+</script>
+</body>
+</html>
