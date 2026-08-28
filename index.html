@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>F1 Bingo 2025</title>
+<title>F1 Bingo 2026</title>
 <style>
   :root {
     --bg: #0f0f0f;
@@ -165,12 +165,10 @@
   .bingo-cell.editable:hover { border-color: var(--border2); }
   .bingo-cell.done { background: var(--done-bg); border-color: var(--done-border); }
   .bingo-cell.partial { background: var(--partial-bg); border-color: var(--partial-border); }
-  .bingo-cell.free { background: #1a1000; border-color: #3a2800; }
   .bingo-cell.line-done { border-color: var(--done) !important; box-shadow: 0 0 0 1px var(--done); }
   .cell-text { font-size: 10px; line-height: 1.35; color: var(--text); font-weight: 500; }
   .bingo-cell.done .cell-text { color: #6ee7a0; }
   .bingo-cell.partial .cell-text { color: #fcd34d; }
-  .bingo-cell.free .cell-text { color: #f59e0b; font-weight: 700; font-size: 11px; }
   .cell-check { font-size: 16px; line-height: 1; }
   .cell-counter {
     display: flex; align-items: center; gap: 4px;
@@ -238,7 +236,7 @@
 
 <!-- SETUP SCREEN -->
 <div id="setup-screen" style="display:none;">
-  <div style="font-size:13px;letter-spacing:0.2em;color:var(--red);font-weight:800;">F1 BINGO 2025</div>
+  <div style="font-size:13px;letter-spacing:0.2em;color:var(--red);font-weight:800;">F1 BINGO 2026</div>
   <div class="setup-title">First-time setup</div>
 
   <!-- Role picker -->
@@ -307,7 +305,7 @@
 
 <!-- LOGIN SCREEN -->
 <div id="login-screen" style="display:none;">
-  <div class="login-logo">F1 Bingo 2025</div>
+  <div class="login-logo">F1 Bingo 2026</div>
   <div class="login-title">Choose your <span>driver</span></div>
 
   <!-- No-token warning — shown instead of cards if token is missing -->
@@ -340,16 +338,18 @@
 <!-- APP SCREEN -->
 <div id="app-screen">
   <header>
-    <div class="header-brand">F1 BINGO 2025</div>
+    <div class="header-brand">F1 BINGO 2026</div>
     <div class="header-right">
       <div class="sync-status" id="sync-status"></div>
       <div class="header-user">Signed in as <span id="header-name"></span></div>
+      <button class="logout-btn" onclick="manualRefresh()" title="Refresh from Gist">⟳</button>
       <button class="logout-btn" onclick="logout()">Sign out</button>
     </div>
   </header>
   <div class="main">
     <div id="app-loading" class="loading">Loading from Gist…</div>
     <div id="app-content" style="display:none;">
+      <div id="load-error-banner"></div>
       <div class="player-tabs" id="player-tabs"></div>
       <div id="player-cards"></div>
       <div class="compare-section">
@@ -481,6 +481,9 @@ let gistId = null;
 let githubToken = null;
 let saveTimer = null;
 let activeTab = PLAYER_NAMES[0];
+let gistLoadOk = false; // false = load failed and no local cache — editing is disabled to avoid saving over real data
+let isSavingNow = false;
+let refreshInterval = null;
 
 // ─── INIT ────────────────────────────────────────────────────────────────────
 
@@ -612,6 +615,7 @@ function submitPin() {
 }
 
 function logout() {
+  clearInterval(refreshInterval);
   localStorage.removeItem('f1bingo_player');
   currentPlayer = null;
   showLoginScreen();
@@ -623,6 +627,11 @@ async function showApp() {
   document.getElementById('setup-screen').style.display = 'none';
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('app-screen').style.display = 'block';
+  await reloadAndRender();
+  startAutoRefresh();
+}
+
+async function reloadAndRender() {
   document.getElementById('app-loading').style.display = 'block';
   document.getElementById('app-content').style.display = 'none';
   await loadGist();
@@ -641,6 +650,19 @@ function defaultState() {
   return s;
 }
 
+function cacheKey() { return 'f1bingo_cache_' + gistId; }
+
+function saveCache() {
+  try { localStorage.setItem(cacheKey(), JSON.stringify(gistData)); } catch (e) { /* storage unavailable, ignore */ }
+}
+
+function loadCache() {
+  try {
+    const raw = localStorage.getItem(cacheKey());
+    return raw ? JSON.parse(raw) : null;
+  } catch (e) { return null; }
+}
+
 async function loadGist() {
   try {
     const res = await fetch(`https://api.github.com/gists/${gistId}`, {
@@ -657,15 +679,32 @@ async function loadGist() {
       if (!gistData[p]) gistData[p] = PLAYERS[p].squares.map(() => ({ count: 0 }));
       while (gistData[p].length < PLAYERS[p].squares.length) gistData[p].push({ count: 0 });
     });
+    gistLoadOk = true;
+    saveCache();
+    setSyncStatus('', '');
   } catch (e) {
-    console.warn('Gist load error, using defaults:', e);
-    gistData = defaultState();
-    setSyncStatus('error', 'Could not load Gist — check ID');
+    console.warn('Gist load error:', e);
+    // Never fall back to a blank board on a failed fetch — a subsequent autosave
+    // would overwrite everyone's real progress in the Gist with zeros. Fall back
+    // to the last known-good local copy instead, and if there isn't one, disable
+    // editing entirely until a load succeeds.
+    const cached = loadCache();
+    if (cached) {
+      gistData = cached;
+      gistLoadOk = true;
+      setSyncStatus('error', '⚠ Could not reach Gist — showing last saved data');
+    } else {
+      gistData = defaultState();
+      gistLoadOk = false;
+      setSyncStatus('error', '⚠ Could not load Gist — editing disabled');
+    }
   }
 }
 
 async function saveGist() {
+  if (!gistLoadOk) return;
   if (!githubToken) { setSyncStatus('error', '⚠ No token — go to Setup to add it'); return; }
+  isSavingNow = true;
   setSyncStatus('saving', 'Saving…');
   try {
     const res = await fetch(`https://api.github.com/gists/${gistId}`, {
@@ -678,17 +717,48 @@ async function saveGist() {
       body: JSON.stringify({ files: { 'f1bingo2025.json': { content: JSON.stringify(gistData, null, 2) } } })
     });
     if (!res.ok) throw new Error('Save failed');
+    saveCache();
     setSyncStatus('saved', 'Saved ✓');
     setTimeout(() => setSyncStatus('', ''), 2500);
   } catch (e) {
     setSyncStatus('error', 'Save failed');
+  } finally {
+    isSavingNow = false;
   }
 }
 
 function scheduleSave() {
   clearTimeout(saveTimer);
-  saveTimer = setTimeout(saveGist, 800);
+  saveTimer = setTimeout(() => { saveTimer = null; saveGist(); }, 800);
 }
+
+// ─── LIVE SYNC ────────────────────────────────────────────────────────────────
+// Other players save to the same Gist from their own devices, so periodically
+// pull their changes in. Skipped while a local edit is pending/saving so we
+// never clobber input that hasn't reached the Gist yet.
+
+async function silentRefresh() {
+  if (!currentPlayer || saveTimer || isSavingNow) return;
+  await loadGist();
+  renderApp();
+}
+
+async function manualRefresh() {
+  clearTimeout(saveTimer);
+  saveTimer = null;
+  await saveGist();
+  await loadGist();
+  renderApp();
+}
+
+function startAutoRefresh() {
+  clearInterval(refreshInterval);
+  refreshInterval = setInterval(silentRefresh, 45000);
+}
+
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') silentRefresh();
+});
 
 function setSyncStatus(cls, txt) {
   const el = document.getElementById('sync-status');
@@ -699,9 +769,19 @@ function setSyncStatus(cls, txt) {
 // ─── RENDER ───────────────────────────────────────────────────────────────────
 
 function renderApp() {
+  renderLoadBanner();
   renderTabs();
   renderCards();
   renderCompare();
+}
+
+function renderLoadBanner() {
+  const el = document.getElementById('load-error-banner');
+  el.innerHTML = gistLoadOk ? '' : `
+    <div class="readonly-notice" style="border-color:var(--red);color:var(--red);margin-bottom:1rem;">
+      ⚠ Could not load saved progress from the Gist. Editing is disabled so nothing gets overwritten.
+      <button class="logout-btn" style="margin-left:8px;" onclick="reloadAndRender()">Retry</button>
+    </div>`;
 }
 
 function renderTabs() {
@@ -709,7 +789,7 @@ function renderTabs() {
   wrap.innerHTML = PLAYER_NAMES.map(p => {
     const done = completedCount(p);
     const bingo = hasBingo(p);
-    return `<button class="player-tab ${p === activeTab ? 'active' : ''}" onclick="switchTab('${p}')">
+    return `<button class="player-tab ${p === activeTab ? 'active' : ''}" data-player="${p}" onclick="switchTab('${p}')">
       ${p}${bingo ? ' 🏆' : ''}
       <span class="tab-score">${done}/25</span>
     </button>`;
@@ -722,7 +802,7 @@ function renderCards() {
 }
 
 function isAdmin() { return currentPlayer === 'Miguel'; }
-function canEdit(p) { return p === currentPlayer || isAdmin(); }
+function canEdit(p) { return gistLoadOk && (p === currentPlayer || isAdmin()); }
 
 function renderCard(p) {
   const squares = PLAYERS[p].squares;
@@ -812,7 +892,7 @@ function renderCompare() {
 
 function switchTab(p) {
   activeTab = p;
-  document.querySelectorAll('.player-tab').forEach(t => t.classList.toggle('active', t.textContent.startsWith(p)));
+  document.querySelectorAll('.player-tab').forEach(t => t.classList.toggle('active', t.dataset.player === p));
   document.querySelectorAll('.card-wrap').forEach(c => c.classList.toggle('active', c.dataset.player === p));
   renderTabs();
 }
